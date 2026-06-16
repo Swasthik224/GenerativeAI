@@ -1,0 +1,11 @@
+# Ignore local Chroma vector database storage
+chroma_db/
+.chroma/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/

@@ -1,0 +1,10 @@
+streamlit
+chromadb
+sentence-transformers
+PyPDF2
+pypdf
+deep-translator
+python-docx
+Pillow
+pytesseract
+tesseract-ocr
