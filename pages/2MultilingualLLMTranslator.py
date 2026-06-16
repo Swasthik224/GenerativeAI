@@ -5,15 +5,11 @@ from docx import Document
 from PIL import Image
 import pytesseract
 import os
-import shutil  # Added to safely check for Linux paths
+import shutil
 
-# --- 🛠️ ROBUST MULTI-PLATFORM TESSERACT CONFIG ---
-# 1. First, check if 'tesseract' is available in the system PATH (Standard for Linux/Streamlit Cloud)
 if shutil.which("tesseract"):
-    # On Linux/Cloud, it's globally accessible, no explicit path string needed
     pass
 else:
-    # 2. Fallback to local Windows paths if running locally
     possible_tesseract_paths = [
         r"C:\Program Files\Tesseract-OCR\tesseract.exe",
         r"C:\Users\manju\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
@@ -23,33 +19,19 @@ else:
             pytesseract.pytesseract.tesseract_cmd = path
             break
 
-st.title("🌐 Project 2: Multimodal Language Translator")
+st.title("Project 2: Multimodal Language Translator")
 st.write("Convert raw text, images, PDFs, or Word documents into multiple languages seamlessly.")
 st.divider()
 
-
-# -------------------------------
-# 2. Initialization & Caching
-# -------------------------------
 @st.cache_resource
 def get_translator_and_languages():
-    """Cache the translator instance and supported languages dict."""
-    # Instantiating a placeholder object to call the API mapping dictionary
     base_translator = GoogleTranslator()
-
-    # deep_translator gives us back a dict containing lower-case names: {'afrikaans': 'af', ...}
     supported_langs = base_translator.get_supported_languages(as_dict=True)
-
-    # Format keys back to Title Case for a clean layout presentation
     formatted_options = {name.title(): code for name, code in supported_langs.items()}
     return base_translator, formatted_options
 
-
-# Retrieve the cached setup
 base_translator, lang_options = get_translator_and_languages()
 
-
-# --- Helper File Parsers ---
 def extract_text_from_pdf(file):
     reader = PdfReader(file)
     text = ""
@@ -59,28 +41,26 @@ def extract_text_from_pdf(file):
             text += extracted + "\n"
     return text
 
-
 def extract_text_from_docx(file):
     doc = Document(file)
     text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
     return text
-
 
 def extract_text_from_image(file):
     image = Image.open(file)
     text = pytesseract.image_to_string(image)
     return text
 
-
-# -------------------------------
-# 3. User Interface Design Layout
-# -------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("### 📥 Input Source")
-    input_mode = st.radio("Choose Input Type:", ["Type Text Directly", "Upload a File (PDF, DOCX, Image)"],
-                          horizontal=True)
+    st.markdown("### Input Source")
+
+    input_mode = st.radio(
+        "Choose Input Type:",
+        ["Type Text Directly", "Upload a File (PDF, DOCX, Image)"],
+        horizontal=True
+    )
 
     source_lang_name = st.selectbox(
         "Detect/Select Source Language:",
@@ -91,14 +71,20 @@ with col1:
     extracted_text = ""
 
     if input_mode == "Type Text Directly":
-        extracted_text = st.text_area(label="Type or paste text to translate:",
-                                      placeholder="Enter your content here...", height=250)
+        extracted_text = st.text_area(
+            label="Type or paste text to translate:",
+            placeholder="Enter your content here...",
+            height=250
+        )
     else:
-        uploaded_file = st.file_uploader("Upload an Image, PDF, or Word Document:",
-                                         type=["pdf", "docx", "png", "jpg", "jpeg"])
+        uploaded_file = st.file_uploader(
+            "Upload an Image, PDF, or Word Document:",
+            type=["pdf", "docx", "png", "jpg", "jpeg"]
+        )
 
         if uploaded_file:
             file_extension = uploaded_file.name.split(".")[-1].lower()
+
             with st.spinner("Extracting content from file..."):
                 try:
                     if file_extension == "pdf":
@@ -111,17 +97,17 @@ with col1:
 
                     if extracted_text.strip():
                         st.success("Text extracted successfully!")
-                        with st.expander("📄 View Extracted Text Preview"):
+                        with st.expander("View Extracted Text Preview"):
                             st.code(extracted_text, language="text")
                     else:
-                        st.warning("⚠️ No readable text could be discovered inside this file.")
+                        st.warning("No readable text could be discovered inside this file.")
+
                 except Exception as e:
                     st.error(f"File Processing Error: {str(e)}")
 
 with col2:
-    st.markdown("### 📤 Translated Output")
+    st.markdown("### Translated Output")
 
-    # Try safely setting the default target UI index to Spanish if it exists in the dictionary
     default_index = list(lang_options.keys()).index("Spanish") if "Spanish" in lang_options else 0
 
     target_lang_name = st.selectbox(
@@ -131,23 +117,26 @@ with col2:
     )
 
     st.write("Click below to process translations:")
-    translate_button = st.button("Translate Source 🚀", type="primary", use_container_width=True)
+    translate_button = st.button(
+        "Translate Source",
+        type="primary",
+        use_container_width=True
+    )
 
     st.markdown("---")
 
     if translate_button:
         if not extracted_text.strip():
-            st.warning("⚠️ No text content available to translate. Please type text or upload a valid file first.")
+            st.warning("No text content available to translate. Please type text or upload a valid file first.")
         else:
             with st.spinner("Processing translations..."):
                 try:
                     target_code = lang_options[target_lang_name]
 
                     if source_lang_name == "Auto-Detect":
-                        # GoogleTranslator handles explicit single-string input setups
-                        engine = GoogleTranslator(source='auto', target=target_code)
+                        engine = GoogleTranslator(source="auto", target=target_code)
                         translated_text = engine.translate(extracted_text)
-                        st.caption("🔍 Source Language: Auto-Detected")
+                        st.caption("Source Language: Auto-Detected")
                     else:
                         source_code = lang_options[source_lang_name]
                         engine = GoogleTranslator(source=source_code, target=target_code)
@@ -159,4 +148,5 @@ with col2:
                 except Exception as e:
                     st.error(f"Translation System Error: {str(e)}")
                     st.info(
-                        "💡 Hint: Ensure you are connected to the internet so the app can reach the Translation servers.")
+                        "Hint: Ensure you are connected to the internet so the app can reach the Translation servers."
+                    )
