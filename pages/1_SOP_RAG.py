@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import chromadb
 from PyPDF2 import PdfReader
@@ -231,4 +230,3 @@ if st.session_state.logged_in:
     show_rag_interface()
 else:
     show_login_page()
-```
